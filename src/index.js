@@ -1,5 +1,7 @@
 import path from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { fileURLToPath, pathToFileURL } from 'node:url'
+import { createRequire } from 'node:module'
+import fsp from 'node:fs/promises'
 import { createPlanFile, MigrationError } from '../lib/migration-core.mjs'
 
 const name = 'dsh-session-migrate'
@@ -8,9 +10,23 @@ const LIST_ENDPOINT = '/__dsh/session-migrate/list'
 const PLAN_ENDPOINT = '/__dsh/session-migrate/plan'
 const packageRoot = path.dirname(path.dirname(fileURLToPath(import.meta.url)))
 const cliFile = path.join(packageRoot, 'bin', 'migrate-session.mjs')
-const sessionModuleUrl = import.meta.resolve('@deepseek-ai/dsh-session')
 
 function quote(value) { return `'${String(value).replaceAll("'", "'\\''")}'` }
+async function resolveSessionModuleUrl() {
+  const candidates = process.argv.filter((value) => /@deepseek-ai[\/]dsh[\/]lib[\/]bin\.js$/.test(String(value)))
+  for (const dshBin of candidates) {
+    try {
+      const require = createRequire(pathToFileURL(path.resolve(dshBin)))
+      return pathToFileURL(require.resolve('@deepseek-ai/dsh-session')).href
+    } catch {}
+  }
+  const appCandidate = '/Applications/DSH Desktop.app/Contents/Resources/app/node_modules/@deepseek-ai/dsh-session/lib/index.js'
+  try {
+    await fsp.access(appCandidate)
+    return pathToFileURL(appCandidate).href
+  } catch {}
+  throw new MigrationError('cannot locate the exact DSH session decoder used by this Host', 'SESSION_DECODER_UNAVAILABLE')
+}
 function send(res, status, value) { const body = JSON.stringify(value); res.writeHead(status, { 'content-type': 'application/json; charset=utf-8', 'content-length': Buffer.byteLength(body), 'cache-control': 'no-store' }); res.end(body) }
 function readBody(req) { return new Promise((resolve, reject) => { let text = ''; req.setEncoding('utf8'); req.on('data', (chunk) => { text += chunk; if (Buffer.byteLength(text) > 1048576) { req.destroy(); reject(new MigrationError('request too large', 'REQUEST_TOO_LARGE')) } }); req.on('end', () => { try { resolve(text.trim() ? JSON.parse(text) : {}) } catch { reject(new MigrationError('invalid JSON', 'INVALID_JSON')) } }); req.on('error', reject); req.on('aborted', () => reject(new MigrationError('request aborted', 'REQUEST_ABORTED'))) }) }
 function projection(ctx) { try { return ctx.get('storageDomain')?.get?.('session_projcache')?.table?.('sessions') } catch { return null } }
@@ -50,6 +66,7 @@ function register(ctx, webServer, owner) {
     if (session.active) throw new MigrationError('session is active', 'SESSION_ACTIVE')
     if (session.related) throw new MigrationError('related/subagent sessions are not supported in v0.1', 'RELATED_SESSIONS')
     if (session.workspaceId === targetWorkspaceId) throw new MigrationError('already in target workspace', 'ALREADY_IN_TARGET')
+    const sessionModuleUrl = await resolveSessionModuleUrl()
     const created = await createPlanFile({ harnessRoot: state.harnessRoot, sessionId, targetWorkspaceId, nodeExecutable: process.execPath, cliFile, sessionModuleUrl })
     const prefix = `${quote(process.execPath)} ${quote(cliFile)}`
     send(res, 200, { ok: true, sessionId, targetWorkspaceId, planFile: created.file, dryRunCommand: `${prefix} dry-run --plan ${quote(created.file)}`, command: `${prefix} execute --plan ${quote(created.file)}` })
