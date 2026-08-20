@@ -45,12 +45,36 @@ async function options(ctx) {
   if (!harnessRoot) harnessRoot = process.env.DSH_HOME ? path.resolve(process.env.DSH_HOME) : null
   if (!harnessRoot) throw new MigrationError('cannot determine Harness root safely', 'HARNESS_ROOT_UNAVAILABLE')
   const bySession = new Map()
-  for (const workspace of workspaces) for (const id of workspace.sessionIds) if (!bySession.has(id)) bySession.set(id, String(workspace.id))
+  for (const workspace of workspaces) {
+    for (const rawId of workspace.sessionIds) {
+      const id = String(rawId)
+      if (!bySession.has(id)) bySession.set(id, String(workspace.id))
+    }
+  }
+  const archived = new Set(ctx.workspaceRegistry.archivedSessionIds.map(String))
   const cache = projection(ctx)
-  const agents = ctx.get('agents')
+  const uniqueHeaders = new Map()
+  for (const header of headers) {
+    const id = String(header.id)
+    if (!uniqueHeaders.has(id)) uniqueHeaders.set(id, header)
+  }
+  const sessions = [...uniqueHeaders.values()]
+    .filter((header) => header.origin !== 'subagent' && !archived.has(String(header.id)))
+    .map((header) => {
+      const id = String(header.id)
+      const durableTitle = title(cache?.get?.(id))
+      const fallbackTitle = header.cwd ? path.basename(header.cwd) : id
+      return {
+        sessionId: id,
+        title: durableTitle || fallbackTitle,
+        cwd: header.cwd ?? null,
+        workspaceId: bySession.get(id) ?? null,
+        related: Boolean(header.parentSession),
+      }
+    })
   return {
     harnessRoot,
-    sessions: headers.map((header) => ({ sessionId: String(header.id), title: title(cache?.get?.(header.id)), cwd: header.cwd ?? null, workspaceId: bySession.get(header.id) ?? null, active: Boolean(agents?.get?.(header.id)), related: Boolean(header.parentSession) })),
+    sessions,
     workspaces: workspaces.map((workspace) => ({ workspaceId: String(workspace.id), title: workspace.title, path: workspace.path })),
   }
 }
@@ -63,7 +87,6 @@ function register(ctx, webServer, owner) {
     const session = state.sessions.find((row) => row.sessionId === sessionId); const target = state.workspaces.find((row) => row.workspaceId === targetWorkspaceId)
     if (!session) throw new MigrationError('session not found', 'SESSION_NOT_FOUND')
     if (!target) throw new MigrationError('target workspace not found', 'TARGET_WORKSPACE_NOT_FOUND')
-    if (session.active) throw new MigrationError('session is active', 'SESSION_ACTIVE')
     if (session.related) throw new MigrationError('related/subagent sessions are not supported in v0.1', 'RELATED_SESSIONS')
     if (session.workspaceId === targetWorkspaceId) throw new MigrationError('already in target workspace', 'ALREADY_IN_TARGET')
     const sessionModuleUrl = await resolveSessionModuleUrl()

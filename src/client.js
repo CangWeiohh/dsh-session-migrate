@@ -12,7 +12,7 @@ window.__ModuleLoader__.load({
       'description': '这里只生成迁移计划。请复制命令，完全退出 DSH Desktop 后再在终端执行。',
       'loading': '正在读取会话和工作区…', 'session': '会话', 'target': '目标工作区',
       'chooseSession': '请选择会话', 'chooseTarget': '请选择目标工作区', 'cancel': '取消',
-      'create': '生成迁移计划', 'creating': '正在生成…', 'active': '运行中的会话不能迁移。',
+      'create': '生成迁移计划', 'creating': '正在生成…',
       'related': '带父子/子代理关系的会话暂不支持单独迁移。', 'noTargets': '没有其他工作区。',
       'result': '迁移计划已生成', 'steps': '先完全退出 DSH，再执行预检；预检成功后执行正式命令。',
       'dryRun': '预检命令', 'execute': '执行命令', 'copy': '复制', 'copied': '已复制', 'close': '关闭',
@@ -23,7 +23,7 @@ window.__ModuleLoader__.load({
       'description': 'This only creates a plan. Copy the commands and run them after fully quitting DSH Desktop.',
       'loading': 'Loading sessions and workspaces…', 'session': 'Session', 'target': 'Target workspace',
       'chooseSession': 'Select a session', 'chooseTarget': 'Select a target workspace', 'cancel': 'Cancel',
-      'create': 'Create migration plan', 'creating': 'Creating…', 'active': 'An active session cannot be migrated.',
+      'create': 'Create migration plan', 'creating': 'Creating…',
       'related': 'Sessions with parent/child relationships are not supported yet.', 'noTargets': 'No other workspace.',
       'result': 'Migration plan created', 'steps': 'Fully quit DSH, run the dry-run, then execute the migration.',
       'dryRun': 'Dry-run command', 'execute': 'Execute command', 'copy': 'Copy', 'copied': 'Copied', 'close': 'Close',
@@ -48,8 +48,8 @@ window.__ModuleLoader__.load({
       const [copied, setCopied] = useState(false)
       return React.createElement('div', { style: { display: 'grid', gap: 6 } },
         React.createElement('strong', null, label),
-        React.createElement('div', { style: { display: 'flex', gap: 8, alignItems: 'flex-start' } },
-          React.createElement('code', { style: { flex: 1, padding: 8, borderRadius: 6, background: 'var(--dsw-alias-bg-layer-2)', whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' } }, value),
+        React.createElement('div', { style: { display: 'flex', minWidth: 0, maxWidth: '100%', gap: 8, alignItems: 'flex-start' } },
+          React.createElement('code', { style: { flex: 1, minWidth: 0, maxWidth: '100%', padding: 8, borderRadius: 6, background: 'var(--dsw-alias-bg-layer-2)', whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' } }, value),
           React.createElement('button', { type: 'button', onClick: async () => { await navigator.clipboard.writeText(value); setCopied(true); setTimeout(() => setCopied(false), 1000) } }, copied ? t('copied') : t('copy'))))
     }
     function Dialog({ t }) {
@@ -66,27 +66,26 @@ window.__ModuleLoader__.load({
         }
         return () => { show = null; abort.current?.abort() }
       }, [])
-      const selected = useMemo(() => catalog.sessions.find((row) => row.sessionId === sessionId), [catalog, sessionId])
-      const targets = useMemo(() => catalog.workspaces.filter((row) => row.workspaceId !== selected?.workspaceId), [catalog, selected])
+      const selected = useMemo(() => catalog.sessions.find((row) => row.sessionId === sessionId), [catalog.sessions, sessionId])
+      const targets = useMemo(() => catalog.workspaces.filter((row) => row.workspaceId !== selected?.workspaceId), [catalog.workspaces, selected])
       const close = useCallback(() => { if (phase === 'creating') return; abort.current?.abort(); setOpen(false) }, [phase])
       const create = useCallback(() => {
-        if (!sessionId || !targetId || selected?.active || selected?.related) return
+        if (!sessionId || !targetId || selected?.related) return
         abort.current?.abort(); const controller = new AbortController(); abort.current = controller; setPhase('creating'); setError(null)
         json(PLAN, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ sessionId, targetWorkspaceId: targetId }) }, controller.signal)
           .then((value) => { if (!controller.signal.aborted) { setResult(value); setPhase('result') } }, (reason) => { if (!controller.signal.aborted) { setError(reason); setPhase('ready') } })
       }, [sessionId, targetId, selected])
       if (!open) return null
       if (phase === 'result') return React.createElement(Modal, { open: true, onClose: close, closeLabel: t('close'), title: t('result'), description: t('steps'), footer: React.createElement('button', { onClick: close }, t('close')) },
-        React.createElement('div', { style: { minWidth: 440, display: 'grid', gap: 14 } }, React.createElement(Copy, { t, label: t('dryRun'), value: result.dryRunCommand }), React.createElement(Copy, { t, label: t('execute'), value: result.command })))
-      const canCreate = phase === 'ready' && sessionId && targetId && !selected?.active && !selected?.related
-      const selectStyle = { width: '100%', height: 36, marginTop: 6 }
+        React.createElement('div', { style: { width: 'min(560px, calc(100vw - 64px))', maxWidth: '100%', minWidth: 0, display: 'grid', gap: 14 } }, React.createElement(Copy, { t, label: t('dryRun'), value: result.dryRunCommand }), React.createElement(Copy, { t, label: t('execute'), value: result.command })))
+      const canCreate = phase === 'ready' && Boolean(sessionId) && Boolean(targetId) && !selected?.related
+      const selectStyle = { boxSizing: 'border-box', width: '100%', maxWidth: '100%', minWidth: 0, height: 36, marginTop: 6, padding: '0 8px', textOverflow: 'ellipsis' }
       return React.createElement(Modal, { open: true, onClose: close, closeLabel: t('cancel'), title: t('title'), description: t('description'), footer: [React.createElement('button', { key: 'c', disabled: phase === 'creating', onClick: close }, t('cancel')), React.createElement('button', { key: 'p', disabled: !canCreate, onClick: create }, phase === 'creating' ? t('creating') : t('create'))] },
-        React.createElement('div', { style: { minWidth: 390, display: 'grid', gap: 14 } },
+        React.createElement('div', { style: { width: 'min(520px, calc(100vw - 64px))', maxWidth: '100%', minWidth: 0, display: 'grid', gap: 14, overflow: 'hidden' } },
           phase === 'loading' ? React.createElement('p', null, t('loading')) : null,
-          phase !== 'loading' ? React.createElement('label', null, t('session'), React.createElement('select', { style: selectStyle, value: sessionId, onChange: (e) => { setSessionId(e.currentTarget.value); setTargetId('') } }, React.createElement('option', { value: '' }, t('chooseSession')), catalog.sessions.map((row) => React.createElement('option', { key: row.sessionId, value: row.sessionId }, `${row.title || row.sessionId} — ${row.cwd || ''}`)))) : null,
-          selected?.active ? React.createElement('p', { role: 'alert' }, t('active')) : null,
+          phase !== 'loading' ? React.createElement('label', { style: { minWidth: 0, maxWidth: '100%' } }, t('session'), React.createElement('select', { style: selectStyle, value: sessionId, onChange: (e) => { setSessionId(e.currentTarget.value); setTargetId('') } }, React.createElement('option', { value: '' }, t('chooseSession')), catalog.sessions.map((row) => React.createElement('option', { key: row.sessionId, value: row.sessionId }, `${row.title || row.sessionId} — ${row.cwd || ''}`)))) : null,
           selected?.related ? React.createElement('p', { role: 'alert' }, t('related')) : null,
-          sessionId ? React.createElement('label', null, t('target'), React.createElement('select', { style: selectStyle, value: targetId, disabled: !targets.length, onChange: (e) => setTargetId(e.currentTarget.value) }, React.createElement('option', { value: '' }, targets.length ? t('chooseTarget') : t('noTargets')), targets.map((row) => React.createElement('option', { key: row.workspaceId, value: row.workspaceId }, `${row.title} — ${row.path}`)))) : null,
+          sessionId ? React.createElement('label', { style: { minWidth: 0, maxWidth: '100%' } }, t('target'), React.createElement('select', { style: selectStyle, value: targetId, disabled: !targets.length, onChange: (e) => setTargetId(e.currentTarget.value) }, React.createElement('option', { value: '' }, targets.length ? t('chooseTarget') : t('noTargets')), targets.map((row) => React.createElement('option', { key: row.workspaceId, value: row.workspaceId }, `${row.title} — ${row.path}`)))) : null,
           error ? React.createElement('p', { role: 'alert' }, `${t('error')}${error.message || String(error)}`) : null))
     }
     const inject = ['slots', 'locale']
