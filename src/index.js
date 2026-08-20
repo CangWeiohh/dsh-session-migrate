@@ -31,6 +31,7 @@ function send(res, status, value) { const body = JSON.stringify(value); res.writ
 function readBody(req) { return new Promise((resolve, reject) => { let text = ''; req.setEncoding('utf8'); req.on('data', (chunk) => { text += chunk; if (Buffer.byteLength(text) > 1048576) { req.destroy(); reject(new MigrationError('request too large', 'REQUEST_TOO_LARGE')) } }); req.on('end', () => { try { resolve(text.trim() ? JSON.parse(text) : {}) } catch { reject(new MigrationError('invalid JSON', 'INVALID_JSON')) } }); req.on('error', reject); req.on('aborted', () => reject(new MigrationError('request aborted', 'REQUEST_ABORTED'))) }) }
 function projection(ctx) { try { return ctx.get('storageDomain')?.get?.('session_projcache')?.table?.('sessions') } catch { return null } }
 function title(record) { const value = record?.rows?.title?.val; return typeof value === 'string' && value.trim() ? value : null }
+function blank(record) { return record?.rows?.sessionListMetadata?.val?.blank === true }
 
 async function options(ctx) {
   const headers = await ctx.sessionPersistence.list()
@@ -59,7 +60,10 @@ async function options(ctx) {
     if (!uniqueHeaders.has(id)) uniqueHeaders.set(id, header)
   }
   const sessions = [...uniqueHeaders.values()]
-    .filter((header) => header.origin !== 'subagent' && !archived.has(String(header.id)))
+    .filter((header) => {
+      const id = String(header.id)
+      return header.origin !== 'subagent' && !archived.has(id) && !blank(cache?.get?.(id))
+    })
     .map((header) => {
       const id = String(header.id)
       const durableTitle = title(cache?.get?.(id))
@@ -87,7 +91,6 @@ function register(ctx, webServer, owner) {
     const session = state.sessions.find((row) => row.sessionId === sessionId); const target = state.workspaces.find((row) => row.workspaceId === targetWorkspaceId)
     if (!session) throw new MigrationError('session not found', 'SESSION_NOT_FOUND')
     if (!target) throw new MigrationError('target workspace not found', 'TARGET_WORKSPACE_NOT_FOUND')
-    if (session.related) throw new MigrationError('related/subagent sessions are not supported in v0.1', 'RELATED_SESSIONS')
     if (session.workspaceId === targetWorkspaceId) throw new MigrationError('already in target workspace', 'ALREADY_IN_TARGET')
     const sessionModuleUrl = await resolveSessionModuleUrl()
     const created = await createPlanFile({ harnessRoot: state.harnessRoot, sessionId, targetWorkspaceId, nodeExecutable: process.execPath, cliFile, sessionModuleUrl })

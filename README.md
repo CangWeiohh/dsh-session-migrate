@@ -48,7 +48,8 @@ CLI 也可直接使用：
 ## 安全限制
 
 - v0.1 拒绝运行中的 Session。
-- v0.1 拒绝 `parentSession` 或存在子 Session 的非孤立会话；后续版本可增加整棵 Session tree 迁移。
+- 选择根会话时，会在同一个事务中迁移全部 Subagent 子孙；Workspace 只登记根会话，子会话保留 `parentSession` 关系。
+- 迁移列表隐藏 archived、Subagent 和 provisional blank Session。
 - 只支持 Workspace domain v2 和 projection-cache v3；未知版本 fail closed。
 - CLI 必须能够通过 `ps`、`lsof` 和文件稳定窗口证明 DSH 已停止。
 - Harness root 必须来自 Host plan 或显式输入，不从 `process.cwd()` / Desktop launch-root 推导。
