@@ -7,6 +7,7 @@ window.__ModuleLoader__.load({
     const NS = 'session-migrate'
     const LIST = '/__dsh/session-migrate/list'
     const PLAN = '/__dsh/session-migrate/plan'
+    function workspaceLabel(cwd) { if (!cwd) return ''; const base = cwd.replace(/[\\/\\\\]+$/, '').split(/[\\/\\\\]/).pop(); return base || '' }
     const zh = {
       'header': '迁移会话', 'sidebar': '会话迁移', 'title': '准备离线迁移',
       'description': '这里只生成迁移计划。请复制命令，完全退出 DSH Desktop 后再在终端执行。',
@@ -83,7 +84,7 @@ window.__ModuleLoader__.load({
       return React.createElement(Modal, { open: true, onClose: close, closeLabel: t('cancel'), title: t('title'), description: t('description'), footer: [React.createElement('button', { key: 'c', disabled: phase === 'creating', onClick: close }, t('cancel')), React.createElement('button', { key: 'p', disabled: !canCreate, onClick: create }, phase === 'creating' ? t('creating') : t('create'))] },
         React.createElement('div', { style: { width: 'min(520px, calc(100vw - 64px))', maxWidth: '100%', minWidth: 0, display: 'grid', gap: 14, overflow: 'hidden' } },
           phase === 'loading' ? React.createElement('p', null, t('loading')) : null,
-          phase !== 'loading' ? React.createElement('label', { style: { minWidth: 0, maxWidth: '100%' } }, t('session'), React.createElement('select', { style: selectStyle, value: sessionId, onChange: (e) => { setSessionId(e.currentTarget.value); setTargetId('') } }, React.createElement('option', { value: '' }, t('chooseSession')), catalog.sessions.map((row) => React.createElement('option', { key: row.sessionId, value: row.sessionId }, `${row.title || row.sessionId} — ${row.cwd || ''}`)))) : null,
+          phase !== 'loading' ? React.createElement('label', { style: { minWidth: 0, maxWidth: '100%' } }, t('session'), React.createElement('select', { style: selectStyle, value: sessionId, onChange: (e) => { setSessionId(e.currentTarget.value); setTargetId('') } }, React.createElement('option', { value: '' }, t('chooseSession')), catalog.sessions.map((row) => React.createElement('option', { key: row.sessionId, value: row.sessionId }, `${row.title || row.sessionId}${workspaceLabel(row.cwd) ? ' \u2014 ' + workspaceLabel(row.cwd) : ''}`)))) : null,
           selected?.related ? React.createElement('p', { role: 'status' }, t('tree')) : null,
           sessionId ? React.createElement('label', { style: { minWidth: 0, maxWidth: '100%' } }, t('target'), React.createElement('select', { style: selectStyle, value: targetId, disabled: !targets.length, onChange: (e) => setTargetId(e.currentTarget.value) }, React.createElement('option', { value: '' }, targets.length ? t('chooseTarget') : t('noTargets')), targets.map((row) => React.createElement('option', { key: row.workspaceId, value: row.workspaceId }, `${row.title} — ${row.path}`)))) : null,
           error ? React.createElement('p', { role: 'alert' }, `${t('error')}${error.message || String(error)}`) : null))

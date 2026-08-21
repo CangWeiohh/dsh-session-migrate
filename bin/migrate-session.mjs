@@ -2,7 +2,7 @@
 import path from 'node:path'
 import process from 'node:process'
 import fsp from 'node:fs/promises'
-import { cleanupOffline, executeOffline, rollbackOffline, MigrationError } from '../lib/migration-core.mjs'
+import { cleanupOffline, executeOffline, fixProjectionCache, rollbackOffline, MigrationError } from '../lib/migration-core.mjs'
 
 function value(name) { const i = process.argv.indexOf(name); return i < 0 ? null : process.argv[i + 1] || null }
 function usage() {
@@ -12,6 +12,7 @@ function usage() {
     '  dsh-session-migrate execute --plan <absolute-plan.json>',
     '  dsh-session-migrate rollback --backup <absolute-backup-dir>',
     '  dsh-session-migrate cleanup --backup <absolute-backup-dir> [--yes]',
+    '  dsh-session-migrate fix-projcache --harness <absolute-harness-root> --session <session-id>',
     '',
     'Fully quit DSH Desktop before running any command.',
   ].join('\n') + '\n')
@@ -26,6 +27,10 @@ async function main() {
   if (command === 'cleanup') {
     const backup = value('--backup'); if (!backup) { usage(); process.exitCode = 2; return }
     console.log(JSON.stringify(await cleanupOffline(backup, { confirm: process.argv.includes('--yes') }), null, 2)); return
+  }
+  if (command === 'fix-projcache') {
+    const harness = value('--harness'); const session = value('--session'); if (!harness || !session) { usage(); process.exitCode = 2; return }
+    console.log(JSON.stringify(await fixProjectionCache(harness, session), null, 2)); return
   }
   if (command === 'rollback') {
     const backup = value('--backup'); if (!backup) { usage(); process.exitCode = 2; return }

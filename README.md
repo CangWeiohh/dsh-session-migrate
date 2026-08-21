@@ -15,7 +15,7 @@
 - 使用当前 DSH 的 `decodeStorageRecord` 验证 packed chunks、事件词汇与连续 seq
 - frame 0 只改 `cwd`，其余 zstd frames 原字节保留
 - 显式更新 Workspace domain v2，保留归档集合
-- 删除目标 Session 的 projection-cache v3 row，使其下次惰性重建
+- 改写目标 Session 的 projection-cache v3 row 的 identity.cwd，保留标题等投影数据；side bar 立即显示正确标题
 - staging、完整备份、source quarantine、事务 manifest、自动 rollback
 - 可选 best-effort 迁移 `dsh-recall-plugin` 快照；目标 store 已存在时不冒险合并
 
