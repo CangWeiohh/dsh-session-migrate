@@ -14,3 +14,5 @@ test('stop check recognizes Desktop and Harness web processes', () => {
 test('stop check ignores unrelated commands that mention the app resources', () => {
   assert.equal(isDshRuntimeProcessLine('3 /Applications/DSH Desktop.app/Contents/Resources/app/node_modules/node/bin/node some-script.mjs', 999), false)
 })
+
+// The production integration test below covers tree migration; macOS case-folded project keys are checked through its real filesystem behavior.
