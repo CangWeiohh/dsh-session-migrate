@@ -95,7 +95,7 @@ function register(ctx, webServer, owner) {
     const sessionModuleUrl = await resolveSessionModuleUrl()
     const created = await createPlanFile({ harnessRoot: state.harnessRoot, sessionId, targetWorkspaceId, nodeExecutable: process.execPath, cliFile, sessionModuleUrl })
     const prefix = `${quote(process.execPath)} ${quote(cliFile)}`
-    send(res, 200, { ok: true, sessionId, targetWorkspaceId, planFile: created.file, dryRunCommand: `${prefix} dry-run --plan ${quote(created.file)}`, command: `${prefix} execute --plan ${quote(created.file)}` })
+    send(res, 200, { ok: true, sessionId, targetWorkspaceId, planFile: created.file, dryRunCommand: `${prefix} dry-run --plan ${quote(created.file)}`, command: `${prefix} execute --plan ${quote(created.file)}`, cleanupCommandTemplate: `${prefix} cleanup --backup <backup-dir> --yes` })
   } catch (error) { send(res, error instanceof MigrationError ? 409 : 500, { ok: false, error: { code: error.code || 'PLAN_FAILED', message: error.message || String(error) } }) } } }))
 }
 function apply(ctx) { const web = ctx.get('webServer'); if (web) register(ctx, web, ctx); else ctx.inject(['webServer'], (sub) => register(ctx, sub.webServer, sub)) }

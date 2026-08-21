@@ -78,7 +78,7 @@ window.__ModuleLoader__.load({
       }, [sessionId, targetId, selected])
       if (!open) return null
       if (phase === 'result') return React.createElement(Modal, { open: true, onClose: close, closeLabel: t('close'), title: t('result'), description: t('steps'), footer: React.createElement('button', { onClick: close }, t('close')) },
-        React.createElement('div', { style: { width: 'min(560px, calc(100vw - 64px))', maxWidth: '100%', minWidth: 0, display: 'grid', gap: 14 } }, React.createElement(Copy, { t, label: t('dryRun'), value: result.dryRunCommand }), React.createElement(Copy, { t, label: t('execute'), value: result.command })))
+        React.createElement('div', { style: { width: 'min(560px, calc(100vw - 64px))', maxWidth: '100%', minWidth: 0, display: 'grid', gap: 14 } }, React.createElement(Copy, { t, label: t('dryRun'), value: result.dryRunCommand }), React.createElement(Copy, { t, label: t('execute'), value: result.command }), result.cleanupCommandTemplate ? React.createElement(Copy, { t, label: t('cleanup'), value: result.cleanupCommandTemplate }) : null))
       const canCreate = phase === 'ready' && Boolean(sessionId) && Boolean(targetId)
       const selectStyle = { boxSizing: 'border-box', width: '100%', maxWidth: '100%', minWidth: 0, height: 36, marginTop: 6, padding: '0 8px', textOverflow: 'ellipsis' }
       return React.createElement(Modal, { open: true, onClose: close, closeLabel: t('cancel'), title: t('title'), description: t('description'), footer: [React.createElement('button', { key: 'c', disabled: phase === 'creating', onClick: close }, t('cancel')), React.createElement('button', { key: 'p', disabled: !canCreate, onClick: create }, phase === 'creating' ? t('creating') : t('create'))] },
