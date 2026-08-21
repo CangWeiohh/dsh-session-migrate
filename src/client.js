@@ -4,6 +4,12 @@ window.__ModuleLoader__.load({
     const React = require('react')
     const { IconBranchOutline16, Modal } = require('@deepseek-ai/dsh-client-ui-primitives')
     const { useCallback, useEffect, useMemo, useRef, useState } = React
+    if (typeof document !== 'undefined' && !document.getElementById('dsh-session-migrate-modal-css')) {
+      const style = document.createElement('style')
+      style.id = 'dsh-session-migrate-modal-css'
+      style.textContent = '.dsh-session-migrate-dialog-max{max-height:min(72vh,640px)!important}.dsh-session-migrate-content-scroll{min-height:0;overflow-y:auto}.dsh-session-migrate-body-scroll{max-height:min(58vh,520px)!important;overflow-y:auto}'
+      document.head.appendChild(style)
+    }
     const NS = 'session-migrate'
     const LIST = '/__dsh/session-migrate/list'
     const PLAN = '/__dsh/session-migrate/plan'
@@ -77,11 +83,11 @@ window.__ModuleLoader__.load({
           .then((value) => { if (!controller.signal.aborted) { setResult(value); setPhase('result') } }, (reason) => { if (!controller.signal.aborted) { setError(reason); setPhase('ready') } })
       }, [sessionId, targetId, selected])
       if (!open) return null
-      if (phase === 'result') return React.createElement(Modal, { open: true, onClose: close, closeLabel: t('close'), title: t('result'), description: t('steps'), footer: React.createElement('button', { onClick: close }, t('close')) },
+      if (phase === 'result') return React.createElement(Modal, { open: true, onClose: close, closeLabel: t('close'), title: t('result'), description: t('steps'), className: 'dsh-session-migrate-dialog-max', contentClassName: 'dsh-session-migrate-content-scroll', footer: React.createElement('button', { onClick: close }, t('close')) },
         React.createElement('div', { style: { width: 'min(560px, calc(100vw - 64px))', maxWidth: '100%', minWidth: 0, display: 'grid', gap: 14 } }, React.createElement(Copy, { t, label: t('dryRun'), value: result.dryRunCommand }), React.createElement(Copy, { t, label: t('execute'), value: result.command }), result.cleanupCommandTemplate ? React.createElement(Copy, { t, label: t('cleanup'), value: result.cleanupCommandTemplate }) : null))
       const canCreate = phase === 'ready' && Boolean(sessionId) && Boolean(targetId)
       const selectStyle = { boxSizing: 'border-box', width: '100%', maxWidth: '100%', minWidth: 0, height: 36, marginTop: 6, padding: '0 8px', textOverflow: 'ellipsis' }
-      return React.createElement(Modal, { open: true, onClose: close, closeLabel: t('cancel'), title: t('title'), description: t('description'), footer: [React.createElement('button', { key: 'c', disabled: phase === 'creating', onClick: close }, t('cancel')), React.createElement('button', { key: 'p', disabled: !canCreate, onClick: create }, phase === 'creating' ? t('creating') : t('create'))] },
+      return React.createElement(Modal, { open: true, onClose: close, closeLabel: t('cancel'), title: t('title'), description: t('description'), className: 'dsh-session-migrate-dialog-max', contentClassName: 'dsh-session-migrate-content-scroll', footer: [React.createElement('button', { key: 'c', disabled: phase === 'creating', onClick: close }, t('cancel')), React.createElement('button', { key: 'p', disabled: !canCreate, onClick: create }, phase === 'creating' ? t('creating') : t('create'))] },
         React.createElement('div', { style: { width: 'min(520px, calc(100vw - 64px))', maxWidth: '100%', minWidth: 0, display: 'grid', gap: 14, overflow: 'hidden' } },
           phase === 'loading' ? React.createElement('p', null, t('loading')) : null,
           phase !== 'loading' ? React.createElement('label', { style: { minWidth: 0, maxWidth: '100%' } }, t('session'), React.createElement('select', { style: selectStyle, value: sessionId, onChange: (e) => { setSessionId(e.currentTarget.value); setTargetId('') } }, React.createElement('option', { value: '' }, t('chooseSession')), catalog.sessions.map((row) => React.createElement('option', { key: row.sessionId, value: row.sessionId }, `${row.title || row.sessionId}${workspaceLabel(row.cwd) ? ' \u2014 ' + workspaceLabel(row.cwd) : ''}`)))) : null,
