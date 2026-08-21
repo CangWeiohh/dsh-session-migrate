@@ -43,7 +43,11 @@ CLI 也可直接使用：
 /path/to/node /path/to/bin/migrate-session.mjs dry-run --plan /absolute/plan.json
 /path/to/node /path/to/bin/migrate-session.mjs execute --plan /absolute/plan.json
 /path/to/node /path/to/bin/migrate-session.mjs rollback --backup /absolute/backup-dir
+/path/to/node /path/to/bin/migrate-session.mjs cleanup --backup /absolute/backup-dir
+/path/to/node /path/to/bin/migrate-session.mjs cleanup --backup /absolute/backup-dir --yes
 ```
+
+`execute` 成功输出会包含 `cleanupCommand`。先不带 `--yes` 运行可检查将清理的事务备份、会话 ID 和预计释放的字节数；确认迁移稳定后，完全退出 DSH 并使用同一命令加 `--yes`。cleanup 仅接受 `COMMITTED` 事务，并且只删除该事务专属的 backup/quarantine 目录，绝不会删除迁移后的会话或普通工作区文件。
 
 ## 安全限制
 

@@ -15,7 +15,7 @@ window.__ModuleLoader__.load({
       'create': '生成迁移计划', 'creating': '正在生成…',
       'tree': '将同时迁移该会话的全部子代理会话。', 'noTargets': '没有其他工作区。',
       'result': '迁移计划已生成', 'steps': '先完全退出 DSH，再执行预检；预检成功后执行正式命令。',
-      'dryRun': '预检命令', 'execute': '执行命令', 'copy': '复制', 'copied': '已复制', 'close': '关闭',
+      'dryRun': '预检命令', 'execute': '执行命令', 'cleanup': '清理备份命令（确认稳定后再执行）', 'copy': '复制', 'copied': '已复制', 'close': '关闭',
       'error': '操作失败：'
     }
     const en = {
@@ -26,7 +26,7 @@ window.__ModuleLoader__.load({
       'create': 'Create migration plan', 'creating': 'Creating…',
       'tree': 'All descendant subagent sessions will be migrated together.', 'noTargets': 'No other workspace.',
       'result': 'Migration plan created', 'steps': 'Fully quit DSH, run the dry-run, then execute the migration.',
-      'dryRun': 'Dry-run command', 'execute': 'Execute command', 'copy': 'Copy', 'copied': 'Copied', 'close': 'Close',
+      'dryRun': 'Dry-run command', 'execute': 'Execute command', 'cleanup': 'Backup cleanup command (run only after confirming stability)', 'copy': 'Copy', 'copied': 'Copied', 'close': 'Close',
       'error': 'Operation failed: '
     }
     let show = null
