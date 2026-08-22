@@ -19,13 +19,25 @@
 - staging、完整备份、source quarantine、事务 manifest、自动 rollback
 - 可选 best-effort 迁移 `dsh-recall-plugin` 快照；目标 store 已存在时不冒险合并
 
-## 安装
+## 使用 AI 安装（先读 AGENTS.md）
+
+如果由 AI 助手、编码代理或自动化工具安装/修改本插件，**必须先阅读仓库根目录的 [AGENTS.md](AGENTS.md)**。其中规定了本插件未发布到 npm、必须使用本地 `link:` 安装、安装后必须重启 DSH Desktop，以及不可绕过的迁移安全限制。
+
+## 安装（本地链接）
+
+本插件没有发布到 npm，必须从本地仓库创建链接。请在本仓库根目录执行：
 
 ```bash
-dsh plugin --profile web add link:/Users/cangwei/Personal.localized/develop/github/dsh-session-migrate
+APP="/Applications/DSH Desktop.app/Contents/Resources/app"
+export DSH_HOME="$HOME/Library/Application Support/dsh-desktop/harness"
+"$APP/node_modules/node/bin/node" \
+  "$APP/node_modules/@deepseek-ai/dsh/lib/bin.js" \
+  plugin --profile web add "link:$PWD"
 ```
 
-然后完全重启 DSH Desktop。仅安装到 `node_modules` 不够，命令会把插件加入 profile bundles/Loader composition。
+命令会把本地插件链接到 DSH 的 web profile，并同步到 profile 的 bundle 配置；只安装到某个 `node_modules` 不够。完成后请**完全退出并重新打开 DSH Desktop**。
+
+> 不能按包名从 npm 安装，也不要以 `pnpm add` 或 `npm install` 代替上述 `dsh plugin` 命令。
 
 ## 使用
 
